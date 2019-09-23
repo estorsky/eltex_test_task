@@ -1,0 +1,10 @@
+{
+    "example_deamon": {
+        "num_starts": 3,
+        "parameters": [
+            "b c",
+            "b"
+        ]
+    }
+}
+
