@@ -1,59 +1,84 @@
-#include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
-#include <string.h>
-#include <zmq.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <syslog.h>
 
-#include <limits.h>
-#include <pthread.h>
-
-#include <string.h>
-
-#define MAX_LEN 256
-
-// #include "../src/ipc.h"
 #include "../../mysystemd_shared_lib/include/mysystemd_shared_lib.h"
+
+static void skeleton_daemon(
+        void)
+{
+    pid_t pid;
+
+    /*  Fork off the parent process */
+    pid = fork();
+
+    /*  An error occurred */
+    if (pid < 0)
+        exit(EXIT_FAILURE);
+
+    /*  Success: Let the parent terminate */
+    if (pid > 0)
+        exit(EXIT_SUCCESS);
+
+    /*  On success: The child process becomes session leader */
+    if (setsid() < 0)
+        exit(EXIT_FAILURE);
+
+    /*  Catch, ignore and handle signals */
+    //TODO: Implement a working signal handler */
+    signal(SIGCHLD, SIG_IGN);
+    signal(SIGHUP, SIG_IGN);
+
+    /*  Fork off for the second time*/
+    pid = fork();
+
+    /*  An error occurred */
+    if (pid < 0)
+        exit(EXIT_FAILURE);
+
+    /*  Success: Let the parent terminate */
+    if (pid > 0)
+        exit(EXIT_SUCCESS);
+
+    /*  Set new file permissions */
+    umask(0);
+
+    /*  Change the working directory to the root directory */
+    /*  or another appropriated directory */
+    chdir("/");
+
+    /*  Close all open file descriptors */
+    int x;
+    for (x = sysconf(_SC_OPEN_MAX); x>=0; x--)
+    {
+        close (x);
+    }
+
+    /*  Open the log file */
+    // openlog ("firstdaemon", LOG_PID, LOG_DAEMON);
+}
+
+
 
 int main (int argc, char* argv[])
 {
-    mysystemd_sync();
-    // printf("%s\n", argv[0]);
+    skeleton_daemon();
 
-    /* char buffer[MAX_LEN];
-    buffer[0] = 0;
-    sprintf(buffer, "%s", argv[0]);
-    int offset = strlen(buffer);
-    while (argv++,--argc)
+    mysystemd_sync(argv);
+
+    while (1)
     {
-        int toWrite = MAX_LEN-offset;
-        int written = snprintf(buffer+offset, toWrite, "%s ", *argv);
-        if(toWrite < written)
-        {
-            break;
-        }
-        offset += written;
-    }     
-    printf("%s\n", buffer); */
+        pause();
+        // syslog (LOG_NOTICE, "First daemon started.");
+        break;
+    }
 
-    /* while (1)
-       {
-        sleep(1);
-        printf("a");
-        if (argc > 1)
-        {
-            if (!strcmp(argv[1], "b"))
-            {
-                printf("b");
-            }
-        }
-        if (argc > 2)
-        {
-            if (!strcmp(argv[2], "c"))
-            {
-                printf("c");
-            }
-        }
-        fflush(stdout);
-    } */
+    // syslog (LOG_NOTICE, "First daemon terminated.");
+    // closelog();
 
+    return 0;
 }
 

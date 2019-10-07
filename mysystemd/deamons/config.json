@@ -1,10 +1,28 @@
 {
-    "example_deamon": {
-        "num_starts": 3,
-        "parameters": [
-            "b c",
-            "b"
-        ]
-    }
+    "deamons": [
+        {
+            "name": "exampled",
+            "num starts": 5,
+            "args": [
+                "-b -c",
+                "-b -c",
+                "-b"
+            ]
+        },
+        {
+            "name": "exampled_second",
+            "num starts": 2,
+            "args": [
+                ""
+            ]
+        },
+        {
+            "name": "exampled_third",
+            "num starts": 0,
+            "args": [
+                "-l"
+            ]
+        }
+    ]
 }
 

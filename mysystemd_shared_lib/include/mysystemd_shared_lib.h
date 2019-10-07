@@ -1,7 +1,8 @@
-#ifndef IPC_H
-#define IPC_H
+#ifndef MYSYSTEMD_SHARED_LIB_H
+#define MYSYSTEMD_SHARED_LIB_H
 
-void *sender( void *const arg);
-void mysystemd_sync ();
+void *sender (void *arg);
+void mysystemd_sync (char *argv[]);
 
 #endif
+

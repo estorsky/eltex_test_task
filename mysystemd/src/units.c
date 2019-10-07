@@ -1,79 +1,144 @@
 #include "units.h"
 
-/* 
-void Change_Value (struct unit *Element, const int NewValue)
+void unit_prints(
+    const struct unit *head)
 {
-    Element->Value = NewValue;
+    while (head)
+    {
+        printf("n:%s  ", head->name);
+        printf("a:%s  ", head->args);
+        printf("p:%d  ", head->pid);
+        printf("s:%d  ", head->status);
+        printf("f:%d  ", head->flag);
+        printf("r:%d  ", head->non_respons);
+        printf("\n");
+        head = head->next;
+    }
+    printf("\n");
 }
 
-struct unit *Go_To_Element (struct unit *Head, const int index)
+void unit_init_pid(
+    struct unit *head,
+    char const *name,
+    char const *args,
+    pid_t const pid)
 {
-    unsigned int counter = 0;
-    while (counter != index) {
-        Head = Head->Next;
-        counter++;
+    while (head)
+    {
+        char full_name[NAME_MAX];
+        strcpy(full_name, PATH_DEAMONS);
+        strcat(full_name, head->name);
+
+        bool name_valid = strcmp(full_name, name); 
+        bool args_valid = strcmp(head->args, args); 
+
+        if ((name_valid || args_valid) == 0)
+        {
+            if (0 == head->pid)
+            {
+                head->pid = pid;
+                dzlog_notice("deamon (%s '%s') new pid = %d",
+                    head->name,
+                    head->args,
+                    head->pid);
+                break;
+            }
+        }
+        head = head->next;
     }
-    return Head;
 }
 
-struct unit *New_Element (struct unit **Head, const int ValueToNew, const unsigned int ListLength)
+void unit_change_flag(
+    struct unit *head,
+    char const *name,
+    char const *args,
+    pid_t const pid)
 {
-    struct unit *New = (struct unit*) malloc(sizeof(struct unit));
-    Change_Value(New, ValueToNew);
-    New->Next = NULL;
-    if (*Head != NULL) {
-        Go_To_Element(*Head, ListLength - 1)->Next = New;
+    while (head)
+    {
+        char full_name[NAME_MAX] = { 0 };
+        strcpy(full_name, PATH_DEAMONS);
+        strcat(full_name, head->name);
+
+        bool name_valid = strcmp(full_name, name); 
+        bool args_valid = strcmp(head->args, args); 
+        bool pid_valid = pid - head->pid; 
+
+        if ((name_valid || args_valid || pid_valid) == 0)
+        {
+            // dzlog_info("%s (%d) found in list", name, pid);
+
+            if (head->flag == no_answer)
+            {
+                head->flag = answer;
+                head->non_respons = 0;
+                // dzlog_info("%s (%d) flag changed", name, pid);
+            }
+            break;
+        }
+        head = head->next;
     }
-    return New;
 }
 
-char Delete_Element (struct unit *ElementToDelete, struct unit **Head)
+void unit_update_non_response(
+    struct unit *head)
 {
-    //0 for normal, -1 for error
-    if (ElementToDelete == NULL) {
-        return -1;
+    while (head)
+    {
+        if (head->flag == no_answer)
+        {
+            dzlog_warn("no response received answer (%s '%s') %d",
+                    head->name,
+                    head->args,
+                    head->pid);
+            head->non_respons++;
+        }
+
+        if (head->non_respons > LIMIT_NON_RESPONSE)
+        {
+            if (head->pid != 0)
+            {
+                if ((kill(head->pid, SIGKILL)))
+                {
+                    dzlog_notice("send SIGKILL to %d", head->pid);
+                }
+            }
+            head->pid = 0;
+            head->status = stopped;
+        }
+
+        head->flag = no_answer;
+
+        head = head->next;
     }
-    if (ElementToDelete == *Head) {
-        *Head = ElementToDelete->Next;
-        free(ElementToDelete);
-        return 0;
-    }
-    struct unit *Temp = *Head;
-    while (Temp->Next != ElementToDelete) {
-        Temp = Temp->Next;
-    }
-    Temp->Next = ElementToDelete->Next;
-    free(ElementToDelete);
-    return 0;
 }
 
-char Swap_Elements(struct unit *FirstList, struct unit *SecondElement)
+int unit_new_element(
+    struct unit **head,
+    char const *name,
+    char const *args)
 {
-    //0 for normal, -1 for error
-    if (FirstList == NULL || SecondElement == NULL) {
-        return -1;
+    int ret = 0;
+
+    if (valid_dem(name) != 1)
+    {
+        dzlog_debug("%s deamons is not valid", name);
+        ret = -1;
+        goto finally;
     }
-    FirstList->Value += SecondElement->Value;
-    SecondElement->Value = FirstList->Value - SecondElement->Value;
-    FirstList->Value -= SecondElement->Value;
-    return 0;
+
+    struct unit *tmp = (struct unit*) malloc(sizeof(struct unit));
+    strcpy(tmp->name, name);
+    strcpy(tmp->args, args);
+    tmp->pid = 0;
+    tmp->status = stopped;
+    tmp->flag = no_answer;
+    tmp->non_respons = 0;
+
+    tmp->next = (*head);
+    (*head) = tmp;
+
+finally:
+    return ret;
 }
-
-struct unit *Search(struct unit *Head, int SearchValue)
-{
-    while (SearchValue != Head->Value) {
-        if (Head->Next == NULL)
-            return NULL;
-        Head = Head->Next;
-    }
-
-    return Head;
-}
-
-void Free_All(struct unit **Head, unsigned int ListLength){
-    while (ListLength > 0){
-        Delete_Element(Go_To_Element(*Head, --ListLength), Head);
-    }
-} 
-*/
 

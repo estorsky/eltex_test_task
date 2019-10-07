@@ -3,21 +3,12 @@
 
 #include "../include/mysystemd_shared_lib.h"
 #include <zmq.h>
-#include <limits.h>
-#include <pthread.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <string.h>
 
-//def path to ipc
-
-enum types_mes {
-    init,
-    running
-};
-
-struct message {
-    char type;
-    int pid;
-    char name_dem[NAME_MAX];
-};
+unsigned int const DELAY = 5;
 
 #endif
+

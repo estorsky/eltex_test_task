@@ -2,22 +2,12 @@
 #define IPC_H
 
 #include <zmq.h>
-#include <limits.h>
-#include <pthread.h>
+#include "units.h"
 
-//def path to ipc
+extern pthread_mutex_t recver_sync;
+extern struct unit *head;
 
-enum types_mes {
-    init,
-    running
-};
-
-struct message {
-    char type;
-    int pid;
-    char name_dem[NAME_MAX];
-};
-
-void *recver( void *const arg);
+void *recver();
 
 #endif
+
