@@ -9,53 +9,51 @@
 
 #include <sys/types.h>
 #include <signal.h>
+#include <errno.h>
 
-#include "ipc.h"
-#include "demctl.h"
+#include "settings.h"
+#include "zlog.h"
 
-enum flag
+enum Answer
 {
-    answer,
-    no_answer
+    RECV = 0,
+    NOT_RECV,
 };
 
-enum status
+enum Status
 {
-    started,
-    stopped
+    STARTED = 0,
+    STOPPED,
 };
 
-struct unit 
+typedef struct Unit 
 {
     char name[NAME_MAX];
     char args[NAME_MAX];
     pid_t pid;
     char status;
-    char flag;
+    char answer;
     unsigned int non_respons;
-    struct unit *next;
-};
+    struct Unit *next;
+} Unit;
 
-void unit_prints(
-    const struct unit *head);
+extern struct Unit *head;
 
-void unit_init_pid(
-    struct unit *head,
+void unit_prints(void);
+
+int unit_init_pid(
     char const *name,
     char const *args,
     pid_t const pid);
 
-void unit_change_flag(
-    struct unit *head,
+int unit_change_answer(
     char const *name,
     char const *args,
     pid_t const pid);
 
-void unit_update_non_response(
-    struct unit *head);
+int unit_update_non_response(void);
 
 int unit_new_element(
-    struct unit **head,
     char const *name,
     char const *arg);
 

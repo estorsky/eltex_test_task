@@ -7,77 +7,66 @@
 
 #include "../../mysystemd_shared_lib/include/mysystemd_shared_lib.h"
 
-static void skeleton_daemon(
-        void)
+int daemonize(void)
 {
     pid_t pid;
+    int ret = 0;
 
-    /*  Fork off the parent process */
     pid = fork();
 
-    /*  An error occurred */
     if (pid < 0)
-        exit(EXIT_FAILURE);
+    {
+        ret = -1;
+        goto finally;
+    }
 
-    /*  Success: Let the parent terminate */
     if (pid > 0)
+    {
         exit(EXIT_SUCCESS);
+    }
 
-    /*  On success: The child process becomes session leader */
     if (setsid() < 0)
-        exit(EXIT_FAILURE);
+    {
+        ret = -2;
+        goto finally;
+    }
 
-    /*  Catch, ignore and handle signals */
-    //TODO: Implement a working signal handler */
     signal(SIGCHLD, SIG_IGN);
     signal(SIGHUP, SIG_IGN);
 
-    /*  Fork off for the second time*/
     pid = fork();
 
-    /*  An error occurred */
     if (pid < 0)
-        exit(EXIT_FAILURE);
-
-    /*  Success: Let the parent terminate */
-    if (pid > 0)
-        exit(EXIT_SUCCESS);
-
-    /*  Set new file permissions */
-    umask(0);
-
-    /*  Change the working directory to the root directory */
-    /*  or another appropriated directory */
-    chdir("/");
-
-    /*  Close all open file descriptors */
-    int x;
-    for (x = sysconf(_SC_OPEN_MAX); x>=0; x--)
     {
-        close (x);
+        ret = -3;
+        goto finally;
     }
 
-    /*  Open the log file */
-    // openlog ("firstdaemon", LOG_PID, LOG_DAEMON);
+    if (pid > 0)
+    {
+        exit(EXIT_SUCCESS);
+    }
+
+    umask(0);
+
+    chdir("/");
+
+    for (int i = sysconf(_SC_OPEN_MAX); i >= 0; i--)
+    {
+        close (i);
+    }
+
+finally:
+    return ret;
 }
-
-
 
 int main (int argc, char* argv[])
 {
-    skeleton_daemon();
+    daemonize();
 
     mysystemd_sync(argv);
 
-    while (1)
-    {
-        pause();
-        // syslog (LOG_NOTICE, "First daemon started.");
-        break;
-    }
-
-    // syslog (LOG_NOTICE, "First daemon terminated.");
-    // closelog();
+    pause();
 
     return 0;
 }

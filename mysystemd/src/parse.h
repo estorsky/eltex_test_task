@@ -7,12 +7,11 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#include "zlog.h"
-#include "cJSON.h"
 #include "units.h"
+#include "demctl.h"
+#include "cJSON.h"
+#include "zlog.h"
  
-extern struct unit *head;
-
 int read_config(void);
 
 #endif

@@ -25,7 +25,6 @@ $(OBJDIR):
 	mkdir -p $(OBJDIR)
 
 clean:
-	# rm -rf $(OBJ)
 	rm -rf $(OBJDIR)
 	rm -rf $(EXE)
 

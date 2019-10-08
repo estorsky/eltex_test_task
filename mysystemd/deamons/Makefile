@@ -1,8 +1,9 @@
+include ../../Makefile.variable
+
 CC = gcc
 FLAGS = -pedantic -Wall -Wextra -O2 # -Werror
 CFLAGS = -g
-LIBS = -lmysystemd_shared # -lzmq -lpthread # -static
-MYLIB = ../../mysystemd_shared_lib
+LIBS = -lmysystemd_shared # -static
 SRC = exampled.c
 EXE = exampled
 
@@ -11,7 +12,7 @@ EXE = exampled
 all: $(EXE) cp
 
 $(EXE):
-	$(CC) $(SRC) -o $@ -L$(MYLIB) $(LIBS)
+	$(CC) -L$(MYSYSTEMD_SHARED_LIB_DIR) $(SRC) -Wl,-rpath,$(MYSYSTEMD_SHARED_LIB_DIR) -o $@ $(LIBS)
 
 cp:
 	cp $(EXE) $(EXE)_second
@@ -19,6 +20,4 @@ cp:
 
 clean:
 	rm -rf $(EXE) $(EXE)_second $(EXE)_third
-
-# export LD_LIBRARY_PATH=/home/estor/test_task/mysystemd_shared_lib
 

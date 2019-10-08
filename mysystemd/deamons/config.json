@@ -22,6 +22,13 @@
             "args": [
                 "-l"
             ]
+        },
+        {
+            "name": "exampled_fourth",
+            "num starts": 7,
+            "args": [
+                "-e"
+            ]
         }
     ]
 }

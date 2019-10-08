@@ -1,23 +1,23 @@
-#ifndef SHARED_IPC_H
-#define SHARED_IPC_H
+#ifndef SHARED_SYNC_H
+#define SHARED_SYNC_H
 
 #include <limits.h>
 #include <pthread.h>
 
 char const PATH_IPC[] = "ipc:///tmp/demipc";
 
-enum types_mes
+enum Types_mes
 {
-    init,
-    running
+    INIT = 0,
+    RUNNING,
 };
 
-struct message
+typedef struct Message
 {
     char type;
     pid_t pid;
     char name[NAME_MAX];
     char args[NAME_MAX];
-};
+} Message;
 
 #endif

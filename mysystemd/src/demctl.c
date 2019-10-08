@@ -1,84 +1,107 @@
 #include "demctl.h"
 
-extern struct unit *head;
-
-void dem_control(
-    void)
+void dem_control(void)
 {
-    init_deamons(head);
-
     pthread_t tid;
-    pthread_create(&tid, NULL, &recver, NULL);
+
+    if (0 > init_deamons())
+    {
+        dzlog_error("init deamons faild");
+        goto finally;
+    }
+
+    errno = 0;
+    if (0 != pthread_create(&tid, NULL, &recver, NULL))
+    {
+        dzlog_error("pthread_create: %s", strerror(errno));
+    }
 
     while (1)
     {
-        // dzlog_info("round iteration");
+        unit_prints();
+
         sleep(DELAY_ROUND_SEC);
 
         pthread_mutex_lock(&recver_sync);
 
-        // unit_prints(head);
-        unit_update_non_response(head);
-        init_deamons(head);
+        if (0 != unit_update_non_response())
+        {
+            dzlog_error("update non response faild");
+        }
+
+        if (0 > init_deamons())
+        {
+            dzlog_error("init deamons faild");
+        }
 
         pthread_mutex_unlock(&recver_sync);
     }
 
     pthread_join(tid, NULL);
+
+finally:
+    pthread_exit(0);
 }
 
-int init_deamons(
-    struct unit *head)
+int init_deamons(void)
 {
-    char cmd [NAME_MAX] = { 0 };
+    struct Unit *deamon = NULL;
+    char cmd [PATH_MAX] = { 0 };
     int ret = 0;
 
-    while (head)
+    deamon = head;
+
+    if (NULL == deamon)
     {
-        if (head->status != started)
+        ret = -1;
+        goto finally;
+    }
+
+    while (deamon)
+    {
+        if (STARTED != deamon->status)
         {
-            strcpy(cmd, PATH_DEAMONS);
-            strcat(cmd, head->name);
-            strcat(cmd, " ");
-            strcat(cmd, head->args);
-            // printf("%s\n", cmd);
-            if (system_vfork(cmd))
+            snprintf(cmd, PATH_MAX,"%s%s %s", PATH_DEAMONS,  deamon->name, deamon->args);
+
+            if (0 == start_dem(cmd))
             {
                 dzlog_info("deamon '%s' '%s' start",
-                    head->name,
-                    head->args);
+                    deamon->name,
+                    deamon->args);
                 ret++;
             } 
             else
             {
-                dzlog_info("deamon '%s' '%s' not start",
-                    head->name,
-                    head->args);
+                dzlog_error("deamon '%s' '%s' not start",
+                    deamon->name,
+                    deamon->args);
             }
 
-            head->status = started;
-            head->non_respons = 0;
+            deamon->status = STARTED;
+            deamon->non_respons = 0;
         }
-        head = head->next;
+        deamon = deamon->next;
     }
 
+finally:
     return ret;
 }
 
-int system_vfork(
-    const char *cmd)
+int start_dem(const char *cmd)
 {
     pid_t pid = -1;
-    pid_t pid_wait = -1;
     int ret = 0;
     const char *sh = "/bin/sh";
-    char *const argv[] = { (char *const)sh, (char *const)"-c", (char *const)cmd, (char *const)NULL };
+    char *const argv[] = { (char *const)sh,
+        (char *const)"-c",
+        (char *const)cmd,
+        (char *const)NULL };
 
     pid = vfork();
     if (pid < 0)
     {
         ret = -1;
-        goto exit;
+        goto finally;
     }
 
     if (pid == 0)
@@ -87,130 +110,114 @@ int system_vfork(
         _exit(127);
     }
 
-    do
-    {
-        pid_wait = waitpid(pid, &ret, 0);
-        if (pid_wait <= -1 && errno != EINTR)
-        {
-            ret = -1;
-            break;
-        }
-    } while (pid_wait != pid);
-
-exit:
+finally:
     return ret;
 }
 
-int valid_dem(
-    const char *name)
+int valid_dem_unsafe(const char *name)
 {
     char path[PATH_MAX] = { 0 };
-    strcpy(path, PATH_DEAMONS);
-    strcat(path, name);
 
-    // printf("%s\n", path);
+    snprintf(path, PATH_MAX, "%s%s", PATH_DEAMONS, name);
 
     return valid_file(path);
 }
 
-int valid_file(
-    const char *path)
+int valid_file(const char *path)
 {
-    struct stat st;
+    struct stat st = { 0 };
+    int ret = 0;
+
+    if (NULL == path)
+    {
+        ret = -1;
+        goto finally;
+    }
 
     if (stat(path, &st) < 0)
-        return -1;
+    {
+        ret = -2;
+        goto finally;
+    }
 
-    return S_ISREG(st.st_mode);
+    if (1 == S_ISREG(st.st_mode))
+    {
+        ret = 0;
+    }
+
+finally:
+    return ret;
 }
 
 int init_log(void)
 {
     int ret = 0;
 
-    int rc;
-    rc = dzlog_init("zlog.conf", "my_cat");
-
-    if (rc) {
-        printf("init failed\n");
+    if (-1 == dzlog_init(ZLOG_CONFIG_FILE, "my_cat"))
+    {
         ret = -1;
         goto finally;
     }
 
     dzlog_info("__________________start_logging__________________");
 
-    // dzlog_info("hello, zlog");
-    // dzlog_error("hello, zlog");
-    // dzlog_warn("hello, zlog");
-    // dzlog_notice("hello, zlog");
-    // dzlog_debug("hello, zlog");
-
-    // zlog_fini();
-
 finally:
     return ret;
 }
 
-void daemonize(
-    void)
+int daemonize(void)
 {
     pid_t pid;
+    int ret = 0;
 
-    /*  Fork off the parent process */
     pid = fork();
 
-    /*  An error occurred */
     if (pid < 0)
     {
-        exit(EXIT_FAILURE);
+        dzlog_error("fork doesnt work");
+        ret = -1;
+        goto finally;
     }
 
-    /*  Success: Let the parent terminate */
     if (pid > 0)
     {
         exit(EXIT_SUCCESS);
     }
 
-    /*  On success: The child process becomes session leader */
     if (setsid() < 0)
     {
-        exit(EXIT_FAILURE);
+        dzlog_error("fork doesnt work");
+        ret = -2;
+        goto finally;
     }
 
-    /*  Catch, ignore and handle signals */
-    //TODO: Implement a working signal handler */
     signal(SIGCHLD, SIG_IGN);
     signal(SIGHUP, SIG_IGN);
 
-    /*  Fork off for the second time*/
     pid = fork();
 
-    /*  An error occurred */
     if (pid < 0)
     {
-        exit(EXIT_FAILURE);
+        dzlog_error("second fork doesnt work");
+        ret = -3;
+        goto finally;
     }
 
-    /*  Success: Let the parent terminate */
     if (pid > 0)
     {
         exit(EXIT_SUCCESS);
     }
 
-    /*  Set new file permissions */
     umask(0);
 
-    /*  Change the working directory to the root directory */
-    /*  or another appropriated directory */
     // chdir("/");
 
-    /*  Close all open file descriptors */
-    for (int x = sysconf(_SC_OPEN_MAX); x>=0; x--)
+    for (int i = sysconf(_SC_OPEN_MAX); i >= 0; i--)
     {
-        close (x);
+        close (i);
     }
 
-    /*  Open the log file */
-    // openlog ("firstdaemon", LOG_PID, LOG_DAEMON);
+finally:
+    return ret;
 }
 

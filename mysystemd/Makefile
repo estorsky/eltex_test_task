@@ -1,7 +1,7 @@
 CC = gcc
 FLAGS = -pedantic -Wall -Wextra -O2 # -Werror
 CFLAGS = -g
-LIBS = -L/usr/local/lib -lzlog -lzmq -lpthread # -static
+LIBS = -lzlog -lzmq -lpthread # -static
 SRCDIR = src
 OBJDIR = obj
 DEAMDIR = deamons
@@ -16,7 +16,7 @@ EXE = mysystemd
 all: $(OBJDIR) $(DEAMDIR) $(EXE)
 
 $(EXE): $(OBJ)
-	$(CC) $(OBJ) -o $@ $(LIBS)
+	$(CC) -L/usr/local/lib $(OBJ) -Wl,-rpath,/usr/local/lib -o $@ $(LIBS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c $(INC)
 	$(CC) $(CFLAGS) $(FLAGS) -c $< -o $@
@@ -28,8 +28,6 @@ $(DEAMDIR):
 	mkdir -p $(DEAMDIR)
 
 clean:
-	# rm -rf $(OBJ)
 	rm -rf $(OBJDIR)
 	rm -rf $(EXE)
 
-# export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib

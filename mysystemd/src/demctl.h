@@ -8,23 +8,23 @@
 #include <sys/stat.h>
 
 #include "settings.h"
-#include "zlog.h"
 #include "units.h"
-#include "parse.h"
+#include "sync.h"
+#include "zlog.h"
 
 void dem_control(void);
 
-int init_deamons(struct unit *head);
+int init_deamons(void);
 
-int system_vfork(const char *cmd);
+int start_dem(const char *cmd);
 
-int valid_dem(const char *name);
+int valid_dem_unsafe(const char *name);
 
 int valid_file(const char *path);
 
 int init_log(void);
 
-void daemonize(void);
+int daemonize(void);
 
 #endif
 
