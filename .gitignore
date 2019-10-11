@@ -1,5 +1,8 @@
 *.o
 *.so
-mysystemdd
+*.log
+tags
+/mysystemd/mysystemd
 exampled
+exampled_*
 

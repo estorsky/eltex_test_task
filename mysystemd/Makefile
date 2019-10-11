@@ -1,7 +1,7 @@
 CC = gcc
 FLAGS = -pedantic -Wall -Wextra -O2 # -Werror
 CFLAGS = -g
-LIBS = -lzmq -lpthread # -static
+LIBS = -lzlog -lzmq -lpthread # -static
 SRCDIR = src
 OBJDIR = obj
 DEAMDIR = deamons
@@ -9,14 +9,14 @@ INCDIR = include
 SRC = $(wildcard $(SRCDIR)/*.c)
 INC = $(wildcard $(INCDIR)/*.h)
 OBJ =  $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC))
-EXE = mysystemdd
+EXE = mysystemd
 
 .PHONY: all clean
 
 all: $(OBJDIR) $(DEAMDIR) $(EXE)
 
 $(EXE): $(OBJ)
-	$(CC) $(OBJ) -o $@ $(LIBS)
+	$(CC) -L/usr/local/lib $(OBJ) -Wl,-rpath,/usr/local/lib -o $@ $(LIBS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c $(INC)
 	$(CC) $(CFLAGS) $(FLAGS) -c $< -o $@
@@ -28,7 +28,6 @@ $(DEAMDIR):
 	mkdir -p $(DEAMDIR)
 
 clean:
-	# rm -rf $(OBJ)
 	rm -rf $(OBJDIR)
 	rm -rf $(EXE)
 
