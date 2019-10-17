@@ -5,4 +5,6 @@ tags
 /mysystemd/mysystemd
 exampled
 exampled_*
+/mysystemd/TEST/mysystemd_units_null_ptr
+/mysystemd/TEST/mysystemd_units_use
 
