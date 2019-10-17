@@ -11,10 +11,10 @@ EXE = exampled
 
 all: $(EXE) cp
 
-$(EXE):
+$(EXE): $(SRC)
 	$(CC) -L$(MYSYSTEMD_SHARED_LIB_DIR) $(SRC) -Wl,-rpath,$(MYSYSTEMD_SHARED_LIB_DIR) -o $@ $(LIBS)
 
-cp:
+cp: $(SRC)
 	cp $(EXE) $(EXE)_second
 	cp $(EXE) $(EXE)_third
 

@@ -18,7 +18,7 @@ all: $(OBJDIR) $(EXE)
 $(EXE): $(OBJ)
 	$(CC) $(LDFLAGS) $(OBJ) $(LIBS) -o $(EXE)
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.c $(INC)
+$(OBJDIR)/%.o: $(SRCDIR)/%.c $(SRCDIR)/%.h $(INC)
 	$(CC) $(CFLAGS) $(FLAGS) -c $< -o $@
 
 $(OBJDIR):
