@@ -196,6 +196,7 @@ finally:
     return ret;
 }
 
+#ifndef TESTING
 static bool valid_name_and_args(
     char const *name_first,
     char const *name_second,
@@ -227,4 +228,5 @@ static bool valid_name_and_args(
 finally:
     return ret;
 }
+#endif
 

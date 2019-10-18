@@ -6,14 +6,15 @@ SRCDIR = src
 OBJDIR = obj
 DEAMDIR = deamons
 INCDIR = include
+INC  = $(wildcard $(INCDIR)/*.h)
+INC += $(wildcard $(SRCDIR)/*.h)
 SRC = $(wildcard $(SRCDIR)/*.c)
-INC = $(wildcard $(INCDIR)/*.h)
 OBJ =  $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC))
 EXE = mysystemd
 
 .PHONY: all clean
 
-all: $(OBJDIR) $(DEAMDIR) $(EXE)
+all: $(OBJDIR) $(DEAMDIR) $(EXE) tests
 
 $(EXE): $(OBJ)
 	$(CC) -L/usr/local/lib $(OBJ) -Wl,-rpath,/usr/local/lib -o $@ $(LIBS)
@@ -27,7 +28,11 @@ $(OBJDIR):
 $(DEAMDIR):
 	mkdir -p $(DEAMDIR)
 
+tests:
+	cd TEST; make all
+
 clean:
 	rm -rf $(OBJDIR)
 	rm -rf $(EXE)
+	cd TEST; make clean
 
